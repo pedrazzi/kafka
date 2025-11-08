@@ -1,0 +1,44 @@
+# docker-compose para Apache Kafka (KRaft) e Kafka UI
+# Execute com: podman compose up -d
+services:
+  kafka:
+    image: docker.io/apache/kafka:3.8.1
+    container_name: kafka
+    restart: unless-stopped
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+      - "9094:9094"
+    environment:
+      - CLUSTER_ID=4aRkS9L2nW6pQ1vB5yD3HgT8mZ0cXfE
+      - KAFKA_NODE_ID=1
+      - KAFKA_PROCESS_ROLES=broker,controller
+      - KAFKA_CONTROLLER_QUORUM_VOTERS=1@kafka:9094
+      - KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092,EXTERNAL://0.0.0.0:29092,CONTROLLER://0.0.0.0:9094
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,EXTERNAL://localhost:29092
+      - KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_LOG_DIRS=/var/lib/kafka/data
+      - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
+    volumes:
+      - ./data/kafka:/var/lib/kafka/data
+    networks:
+      - kafka-net
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    restart: unless-stopped
+    ports:
+      - "8080:8084"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=
+    depends_on:
+      - kafka
+    networks:
+      - kafka-net
+networks:
+  kafka-net:
+    driver: bridge
